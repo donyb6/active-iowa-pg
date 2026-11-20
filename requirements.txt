@@ -1,0 +1,10 @@
+requests
+pandas
+pyyaml
+pytest
+python-dotenv
+streamlit
+logging
+altair
+psycopg2-binary
+sqlalchemy
