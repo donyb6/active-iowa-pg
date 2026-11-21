@@ -2,7 +2,8 @@ import json
 import yaml
 from pathlib import Path
 from psycopg2.extras import execute_values
-from config.db import engine
+from sqlalchemy import text, insert, MetaData, Table
+from config.db import engine, get_session
 
 with open("data.yaml") as f:
     cfg = yaml.safe_load(f)
@@ -25,4 +26,14 @@ def to_text(v):
 
 def parse_line(line, source_file):
     rec = json.loads(line)
-    return tuple(to_text(rec.get(c)) for c in COLUMNS) + (source_file,)
+    row = {c: to_text(rec.get(c)) for c in COLUMNS}
+    row["source_file"] = source_file
+    return row
+
+raw_table = Table(
+    "iowa_businesses_raw", MetaData(), schema="bronze", autoload_with=engine
+)
+
+total = 0
+bad_lines = 0
+batch = []
