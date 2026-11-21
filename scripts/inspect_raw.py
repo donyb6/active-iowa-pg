@@ -15,6 +15,7 @@ with open(p, encoding="utf-8") as f:
     first = f.readline()
     second = f.readline()
 
+
 print(first[:80])
 print(second[:80])
 print("size MB:", p.stat().st_size / 1e6)
