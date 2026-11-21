@@ -1,9 +1,10 @@
 source:
   name: active_iowa_businesses
   url: https://idh-be.iowa.gov/api/v1/datasets/554/rows.json
-  format: json
-  timeout_sec: 120
+  format: zip
+  timeout_sec: 300
 
 storage:
   raw_dir: data/raw
-  file_name: active_iowa_businesses.json
+  archive_filename: iowa_businesses.zip
+  extracted_filename: active_iowa_business.json
