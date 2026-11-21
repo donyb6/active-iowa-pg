@@ -19,3 +19,10 @@ COLUMNS = [
 ]
 
 BATCH_SIZE = 5000
+
+def to_text(v):
+    return None if v is None else str(v)
+
+def parse_line(line, source_file):
+    rec = json.loads(line)
+    return tuple(to_text(rec.get(c)) for c in COLUMNS) + (source_file,)
