@@ -1,14 +1,17 @@
 import json
 import yaml
+import sys, os
 from pathlib import Path
-from psycopg2.extras import execute_values
 from sqlalchemy import text, insert, MetaData, Table
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(ROOT))
 from config.db import engine, get_session
 
-with open("data.yaml") as f:
+with open(ROOT / "config" / "data.yaml") as f:
     cfg = yaml.safe_load(f)
     
-raw_dir = Path(cfg["storage"]["raw_dir"])
+raw_dir = ROOT / cfg["storage"]["raw_dir"]
 src = raw_dir / cfg["storage"]["extracted_filename"]
 
 COLUMNS = [
