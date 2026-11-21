@@ -37,3 +37,37 @@ raw_table = Table(
 total = 0
 bad_lines = 0
 batch = []
+
+session = get_session()
+try:
+    session.execute(text("TRUNCATE bronze.iowa_businesses_raw RESTART IDENTITY;"))
+    
+    with open(src, encoding="utf-8") as f:
+        for line_no, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                batch.append(parse_line(line, src.name))
+            except json.JSONDecodeError:
+                bad_lines += 1
+                print(f"Bad JSON on line {line_no}, skipped")
+                continue
+            
+            if len(batch) >= BATCH_SIZE:
+                session.execute(insert(raw_table), batch)
+                total += len(batch)
+                batch.clear()
+                print(f"{total:,} rows landed")
+                
+    if batch:
+        session.execute(insert(raw_table), batch)
+        total += len(batch)
+    
+    session.commit()
+    print(f"Done. {total:,} rows landed, {bad_lines} bad lines.")
+except Exception:
+    session.rollback()
+    raise
+finally:
+    session.close()
