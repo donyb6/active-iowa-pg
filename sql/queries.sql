@@ -89,7 +89,7 @@ WHERE ho_state ~ '^[0-9]+$'; -- no ho_state has numerical entries
 
 SELECT ho_address_1, ho_city, ho_zip, ho_state, ho_country
 FROM bronze.iowa_businesses_raw
-WHERE ho_city ~ '^[A-Za-z]{2}$'; -- 25 rows have shortened city names
+WHERE ho_city ~ '^[A-Za-z]{2}$' AND ho_state <> 'IA'; -- 25 rows have shortened city names
 
 SELECT *
 FROM (
@@ -112,3 +112,54 @@ SELECT ra_state, ho_state
 FROM bronze.iowa_businesses_raw
 WHERE (ra_state IS NOT NULL AND TRIM(ra_state) <> '' AND LENGTH(TRIM(ra_state)) <> 2)
    OR (ho_state IS NOT NULL AND TRIM(ho_state) <> '' AND LENGTH(TRIM(ho_state)) <> 2);
+
+
+WITH clean AS (
+    SELECT
+        id,
+        UPPER(TRIM(REPLACE(ho_city, '"', ''))) AS city,
+        CASE WHEN TRIM(ho_zip) ~ '^[0-9]{5}' THEN LEFT(TRIM(ho_zip), 5) END AS zip5,
+        ho_state,
+        ho_country
+    FROM bronze.iowa_businesses_raw
+),
+city_counts AS (
+    -- the lookup: how often each full-length city appears per ZIP
+    SELECT zip5, city, COUNT(*) AS n
+    FROM clean
+    WHERE ho_country = 'USA'
+      AND zip5 IS NOT NULL
+      AND LENGTH(city) > 2
+    GROUP BY zip5, city
+),
+ranked AS (
+    SELECT
+        zip5, city, n,
+        SUM(n) OVER (PARTITION BY zip5) AS zip_total,
+        ROW_NUMBER() OVER (PARTITION BY zip5 ORDER BY n DESC, city) AS rn
+    FROM city_counts
+)
+SELECT
+    c.city                              AS short_city,
+    c.zip5,
+    c.ho_state,
+    r.city                              AS candidate_city,
+    r.n                                 AS candidate_rows,
+    r.zip_total                         AS rows_in_zip,
+    ROUND(100.0 * r.n / r.zip_total, 1) AS pct
+FROM clean c
+LEFT JOIN ranked r
+       ON r.zip5 = c.zip5 AND r.rn = 1
+WHERE c.ho_country = 'USA'
+  AND c.city ~ '^[A-Za-z]{2}$'
+ORDER BY pct DESC NULLS LAST, c.zip5;
+
+SELECT
+    LEFT(TRIM(ho_zip), 5)                      AS zip5,
+    UPPER(TRIM(REPLACE(ho_city, '"', '')))     AS city,
+    COUNT(*)                                   AS n
+FROM bronze.iowa_businesses_raw
+WHERE ho_country = 'USA'
+  AND LEFT(TRIM(ho_zip), 5) IN ('52314', '50324')
+GROUP BY 1, 2
+ORDER BY zip5, n DESC;
