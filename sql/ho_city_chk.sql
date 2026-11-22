@@ -141,3 +141,24 @@ SELECT *
 FROM ho_city_map
 WHERE pass <> 'normalize'
 ORDER BY pass, row_count DESC;
+
+SELECT original, proposed, row_count
+FROM ho_city_map
+WHERE pass = 'normalize'
+ORDER BY row_count DESC
+LIMIT 40;
+
+
+SELECT original, proposed, row_count
+FROM ho_city_map
+WHERE pass = 'normalize'
+  AND original !~ '^(MT|ST|FT)[. ]'
+  AND original !~ ', (IA|IOWA)$'
+ORDER BY row_count DESC
+LIMIT 40;
+
+SELECT original, proposed, row_count
+FROM ho_city_map
+WHERE proposed LIKE '%SAINT%'
+   OR proposed ~ '(^| )(JCT|SGT|HTS|HGTS)( |$)'
+   OR proposed LIKE 'W %';
