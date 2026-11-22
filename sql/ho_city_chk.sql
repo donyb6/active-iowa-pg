@@ -17,10 +17,20 @@ norm0 AS (
         city0, ho_state, zip5,
         REGEXP_REPLACE(
             CASE WHEN ho_state = 'IA'
-                 THEN REGEXP_REPLACE(REPLACE(REPLACE(city0, 'D.C.', 'DC'), '.', ' '), '[, ]+(IA|IOWA)$', '')
-                 ELSE REPLACE(REPLACE(city0, 'D.C.', 'DC'), '.', ' ') END,
+                 THEN REGEXP_REPLACE(REPLACE(REPLACE(d, 'D.C.', 'DC'), '.', ' '), '[, ]+(IA|IOWA)$', '')
+                 ELSE REPLACE(REPLACE(d, 'D.C.', 'DC'), '.', ' ') END,
             '\s+', ' ', 'g') AS c
-    FROM base
+    FROM (
+        SELECT *,
+            CASE
+                WHEN city0 ~ '^N\. ?[A-Z]{2}' THEN REGEXP_REPLACE(city0, '^N\. ?', 'NORTH ')
+                WHEN city0 ~ '^S\. ?[A-Z]{2}' THEN REGEXP_REPLACE(city0, '^S\. ?', 'SOUTH ')
+                WHEN city0 ~ '^E\. ?[A-Z]{2}' THEN REGEXP_REPLACE(city0, '^E\. ?', 'EAST ')
+                WHEN city0 ~ '^W\. ?[A-Z]{2}' THEN REGEXP_REPLACE(city0, '^W\. ?', 'WEST ')
+                ELSE city0
+            END AS d
+        FROM base
+    ) b
 ),
 norm AS (
     SELECT
