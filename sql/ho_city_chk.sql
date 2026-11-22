@@ -99,3 +99,21 @@ SELECT
 FROM final
 WHERE proposed <> city0 OR city1 ~ '^[A-Z]{2}$'
 GROUP BY city0, city1, zip5, ho_state, proposed, pct, dist;
+
+-- 1. Overview
+SELECT pass, COUNT(*) AS distinct_mappings, SUM(row_count) AS rows_affected
+FROM ho_city_map
+GROUP BY pass
+ORDER BY pass;
+
+-- 2. Des Moines safety check: must return 0 rows
+SELECT *
+FROM ho_city_map
+WHERE original LIKE '%DES MOINES%'
+  AND proposed NOT LIKE '%DES MOINES%';
+
+-- 3. The rows that need your eyes (everything except plain normalize)
+SELECT *
+FROM ho_city_map
+WHERE pass <> 'normalize'
+ORDER BY pass, row_count DESC;
