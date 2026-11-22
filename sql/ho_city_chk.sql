@@ -12,23 +12,37 @@ WITH base AS (
       AND TRIM(ho_city) <> ''
 ),
 -- PASS 1: deterministic cleanup (periods, trailing state text, abbreviations)
+norm0 AS (
+    SELECT
+        city0, ho_state, zip5,
+        REGEXP_REPLACE(
+            CASE WHEN ho_state = 'IA'
+                 THEN REGEXP_REPLACE(REPLACE(REPLACE(city0, 'D.C.', 'DC'), '.', ' '), '[, ]+(IA|IOWA)$', '')
+                 ELSE REPLACE(REPLACE(city0, 'D.C.', 'DC'), '.', ' ') END,
+            '\s+', ' ', 'g') AS c
+    FROM base
+),
 norm AS (
     SELECT
         city0, ho_state, zip5,
-        TRIM(BOTH ' ,' FROM REGEXP_REPLACE(
+        TRIM(BOTH ' ,' FROM
             REGEXP_REPLACE(
             REGEXP_REPLACE(
             REGEXP_REPLACE(
             REGEXP_REPLACE(
-                CASE WHEN ho_state = 'IA'
-                     THEN REGEXP_REPLACE(REPLACE(city0, '.', ' '), '[, ]+(IA|IOWA)$', '')
-                     ELSE REPLACE(city0, '.', ' ') END,
+            REGEXP_REPLACE(
+            REGEXP_REPLACE(
+            REGEXP_REPLACE(
+                c,
                 '^MT\M', 'MOUNT'),
-                '^ST\M', 'SAINT'),
                 '^FT\M', 'FORT'),
+                '\mSGT\M', 'SERGEANT'),
+                '\mJCT\M', 'JUNCTION'),
+                '^W DES MOINES', 'WEST DES MOINES'),
                 '\m(HTS|HGTS)\M', 'HEIGHTS', 'g'),
-                '\s+', ' ', 'g')) AS city1
-    FROM base
+                '\mSAINT\M', 'ST', 'g')
+        ) AS city1
+    FROM norm0
 ),
 -- ZIP lookup, built AFTER pass 1 so spelling variants merge into one count
 zip_city AS (
