@@ -32,11 +32,29 @@ norm0 AS (
         FROM base
     ) b
 ),
+dir_known AS (
+    SELECT c AS full_name
+    FROM norm0
+    WHERE c ~ '^(NORTH|SOUTH|EAST|WEST) '
+    GROUP BY c
+    HAVING COUNT(*) >= 2
+),
+norm0b AS (
+    SELECT n0.city0, n0.ho_state, n0.zip5,
+           COALESCE(k.full_name, n0.c) AS c
+    FROM norm0 n0
+    LEFT JOIN dir_known k
+           ON n0.c ~ '^[NSEW] '
+          AND k.full_name = (CASE LEFT(n0.c, 1)
+                                 WHEN 'N' THEN 'NORTH'
+                                 WHEN 'S' THEN 'SOUTH'
+                                 WHEN 'E' THEN 'EAST'
+                                 ELSE 'WEST' END) || SUBSTRING(n0.c FROM 2)
+),
 norm AS (
     SELECT
         city0, ho_state, zip5,
         TRIM(BOTH ' ,' FROM
-            REGEXP_REPLACE(
             REGEXP_REPLACE(
             REGEXP_REPLACE(
             REGEXP_REPLACE(
@@ -48,11 +66,10 @@ norm AS (
                 '^FT\M', 'FORT'),
                 '\mSGT\M', 'SERGEANT'),
                 '\mJCT\M', 'JUNCTION'),
-                '^W DES MOINES', 'WEST DES MOINES'),
                 '\m(HTS|HGTS)\M', 'HEIGHTS', 'g'),
                 '\mSAINT\M', 'ST', 'g')
         ) AS city1
-    FROM norm0
+    FROM norm0b
 ),
 -- ZIP lookup, built AFTER pass 1 so spelling variants merge into one count
 zip_city AS (
@@ -162,3 +179,15 @@ FROM ho_city_map
 WHERE proposed LIKE '%SAINT%'
    OR proposed ~ '(^| )(JCT|SGT|HTS|HGTS)( |$)'
    OR proposed LIKE 'W %';
+
+SELECT original, proposed, pass, row_count
+FROM ho_city_map
+WHERE original ~ '^[NSEW]\.? '
+ORDER BY row_count DESC;
+
+SELECT UPPER(TRIM(ho_city)) AS city, COUNT(*) AS n
+FROM bronze.iowa_businesses_raw
+WHERE ho_country = 'USA'
+  AND UPPER(TRIM(ho_city)) ~ '^[NSEW] '
+GROUP BY 1
+ORDER BY n DESC;
