@@ -95,7 +95,7 @@ SELECT *
 FROM (
     SELECT *,
         COUNT(*) OVER (
-            PARTITION BY "id", corp_number, legal_name, corporation_type, effective_date, registered_agent,
+            PARTITION BY corp_number, legal_name, corporation_type, effective_date, registered_agent,
 				ra_address_1, ra_city, ra_state, ra_zip, ra_latitude, ra_longitude, ra_location,
 				ho_address_1, ho_city, ho_state, ho_zip, ho_country, ho_latitude, ho_longitude, ho_location
         ) AS duplicate_count
