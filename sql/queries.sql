@@ -102,3 +102,13 @@ FROM (
     FROM bronze.iowa_businesses_raw
 ) AS duplicates
 WHERE duplicate_count > 1; -- no duplicates
+
+SELECT TRIM(corp_number) AS corp_number, COUNT(*)
+FROM bronze.iowa_businesses_raw
+GROUP BY TRIM(corp_number)
+HAVING COUNT(*) > 1;
+
+SELECT ra_state, ho_state
+FROM bronze.iowa_businesses_raw
+WHERE (ra_state IS NOT NULL AND TRIM(ra_state) <> '' AND LENGTH(TRIM(ra_state)) <> 2)
+   OR (ho_state IS NOT NULL AND TRIM(ho_state) <> '' AND LENGTH(TRIM(ho_state)) <> 2);
