@@ -167,4 +167,18 @@ ORDER BY zip5, n DESC;
 
 SELECT ho_address_1, ho_city, ho_zip, ho_country
 FROM silver.iowa_businesses
-WHERE ho_country <> 'USA'; -- i have to rollback to standardise ho_city non US contries
+WHERE ho_country <> 'USA'; -- i have to rollback to standardise ho_city non US countries
+
+SELECT 
+    'bronze' AS layer,
+    COUNT(*) FILTER (WHERE ho_country = 'USA') AS usa_count,
+    COUNT(*) FILTER (WHERE ho_country <> 'USA' AND TRIM(ho_country) <> '') AS non_usa_count,
+    COUNT(*) FILTER (WHERE ho_country IS NULL OR TRIM(ho_country) = '') AS missing_count
+FROM bronze.iowa_businesses_raw
+UNION ALL
+SELECT 
+    'silver' AS layer,
+    COUNT(*) FILTER (WHERE ho_country = 'USA') AS usa_count,
+    COUNT(*) FILTER (WHERE ho_country <> 'USA' AND TRIM(ho_country) <> '') AS non_usa_count,
+    COUNT(*) FILTER (WHERE ho_country IS NULL OR TRIM(ho_country) = '') AS missing_count
+FROM silver.iowa_businesses;
