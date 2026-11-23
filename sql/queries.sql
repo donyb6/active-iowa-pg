@@ -181,4 +181,4 @@ SELECT
     COUNT(*) FILTER (WHERE ho_country = 'USA') AS usa_count,
     COUNT(*) FILTER (WHERE ho_country <> 'USA' AND TRIM(ho_country) <> '') AS non_usa_count,
     COUNT(*) FILTER (WHERE ho_country IS NULL OR TRIM(ho_country) = '') AS missing_count
-FROM silver.iowa_businesses;
+FROM silver.iowa_businesses; -- equal values in bronze and silver layer.
