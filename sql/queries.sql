@@ -163,3 +163,8 @@ WHERE ho_country = 'USA'
   AND LEFT(TRIM(ho_zip), 5) IN ('52314', '50324')
 GROUP BY 1, 2
 ORDER BY zip5, n DESC;
+
+
+SELECT ho_address_1, ho_city, ho_zip, ho_country
+FROM silver.iowa_businesses
+WHERE ho_country <> 'USA'; -- i have to rollback to standardise ho_city non US contries
