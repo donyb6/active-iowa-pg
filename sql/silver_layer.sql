@@ -59,8 +59,8 @@ SELECT
     CAST(NULLIF(TRIM(r.ra_longitude), '') AS NUMERIC(11,8)),
 
     silver.clean_text(r.ho_address_1),
-    COALESCE(hc.proposed, UPPER(silver.clean_text(r.ho_city))),
-    COALESCE(hc.proposed <> hc.original, FALSE),
+    COALESCE(hc.proposed, ic.proposed, UPPER(silver.clean_text(r.ho_city))),
+    COALESCE(hc.proposed <> hc.original, ic.proposed <> ic.original, FALSE),
     UPPER(silver.clean_text(r.ho_state)),
     silver.clean_text(r.ho_zip),
     silver.clean_text(r.ho_country),
