@@ -77,4 +77,7 @@ LEFT JOIN silver.city_corrections hc
       AND hc.state IS NOT DISTINCT FROM UPPER(TRIM(r.ho_state))
       AND hc.zip5 IS NOT DISTINCT FROM
           (CASE WHEN TRIM(r.ho_zip) ~ '^[0-9]{5}' THEN LEFT(TRIM(r.ho_zip), 5) END)
-      AND r.ho_country = 'USA';
+      AND (r.ho_country = 'USA' OR r.ho_country IS NULL)
+LEFT JOIN silver.intl_city_corrections ic
+       ON ic.original = UPPER(TRIM(REPLACE(r.ho_city, '"', '')))
+      AND ic.country = UPPER(TRIM(r.ho_country));
