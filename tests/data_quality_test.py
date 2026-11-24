@@ -59,13 +59,15 @@ CHECKS =[
     Check("zip_flag_consistent", "error",
           "SELECT COUNT(*) FROM silver.iowa_businesses WHERE ra_zip_invalidated AND ra_zip IS NOT NULL"),
     
-     Check("city_flags_match_corrections", "error",
+         Check("city_flags_match_corrections", "error",
           r"""SELECT ABS(
                   (SELECT COUNT(*) FILTER (WHERE ho_city_corrected)
                         + COUNT(*) FILTER (WHERE ra_city_corrected)
                    FROM silver.iowa_businesses)
                 - (SELECT COALESCE(SUM(row_count), 0) FROM silver.city_corrections
-                   WHERE pass <> 'UNRESOLVED_short'))"""),
+                   WHERE pass <> 'UNRESOLVED_short')
+                - (SELECT COALESCE(SUM(row_count), 0) FROM silver.intl_city_corrections
+                   WHERE proposed <> original))"""),
      
       Check("short_city_codes_remaining", "warn",
           r"""SELECT COUNT(*) FROM silver.iowa_businesses
