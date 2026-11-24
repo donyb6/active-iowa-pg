@@ -182,3 +182,43 @@ SELECT
     COUNT(*) FILTER (WHERE ho_country <> 'USA' AND TRIM(ho_country) <> '') AS non_usa_count,
     COUNT(*) FILTER (WHERE ho_country IS NULL OR TRIM(ho_country) = '') AS missing_count
 FROM silver.iowa_businesses; -- equal values in bronze and silver layer.
+
+
+SELECT
+    COUNT(*) FILTER (WHERE ho_city_corrected AND ho_country = 'USA')  AS ho_usa,
+    COUNT(*) FILTER (WHERE ho_city_corrected AND ho_country IS NULL)  AS ho_null_country,
+    COUNT(*) FILTER (WHERE ho_city_corrected AND ho_country <> 'USA') AS ho_intl,
+    COUNT(*) FILTER (WHERE ra_city_corrected)                         AS ra,
+    (SELECT SUM(row_count) FROM silver.city_corrections
+     WHERE pass <> 'UNRESOLVED_short')                                AS us_table,
+    (SELECT SUM(row_count) FROM silver.intl_city_corrections
+     WHERE proposed <> original)                                      AS intl_table
+FROM silver.iowa_businesses;
+
+SELECT COUNT(*) FILTER (WHERE ho_city_corrected) AS corrected_in_null_country
+FROM silver.iowa_businesses
+WHERE ho_country IS NULL;
+
+
+SELECT COUNT(*) AS null_country_rows,
+       COUNT(*) FILTER (WHERE ho_address_1 IS NULL AND ho_city IS NULL
+                          AND ho_state IS NULL AND ho_zip IS NULL) AS no_head_office_info,
+       COUNT(*) FILTER (WHERE ho_state ~ '^[A-Z]{2}$'
+                          AND ho_zip ~ '^[0-9]{5}') AS us_looking
+FROM silver.iowa_businesses
+WHERE ho_country IS NULL;
+
+
+SELECT corp_number, ho_city, ho_state, ho_zip, ho_country
+FROM silver.iowa_businesses
+WHERE ho_country <> 'USA'
+  AND ho_zip ~ '^[0-9]{5}' AND ho_state ~ '^[A-Z]{2}$';
+
+--  intl_cit_corrections queries
+SELECT pass, COUNT(*) AS mappings, SUM(row_count) AS rows_affected
+FROM silver.intl_city_corrections
+GROUP BY pass ORDER BY pass;
+
+SELECT country, original, proposed, pass, dist, row_count
+FROM silver.intl_city_corrections
+ORDER BY pass, country, row_count DESC;
