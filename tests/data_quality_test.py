@@ -85,6 +85,13 @@ CHECKS =[
                         HAVING COUNT(*) >= 5) t
                   GROUP BY ho_zip, REPLACE(ho_city, ' ', '')
                   HAVING COUNT(*) > 1) g"""),
+    
+        Check("intl_overrides_match_rows", "error",
+          r"""SELECT COUNT(*) FROM silver.intl_city_overrides o
+              WHERE NOT EXISTS (
+                  SELECT 1 FROM bronze.iowa_businesses_raw b
+                  WHERE UPPER(TRIM(REPLACE(b.ho_city, '"', ''))) = o.original
+                    AND UPPER(TRIM(b.ho_country)) = o.country)"""),
 ]
 
 
