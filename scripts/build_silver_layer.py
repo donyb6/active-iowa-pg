@@ -7,7 +7,8 @@ sys.path.append(str(ROOT))
 from sqlalchemy import text
 from config.db import get_session
 
-SQL_FILES = ["city_correction.sql", "silver_layer.sql"]
+SQL_FILES = ["city_correction.sql", "intl_city_corrections.sql",
+             "intl_overrides.sql", "silver_layer.sql"]
 
 session = get_session()
 
