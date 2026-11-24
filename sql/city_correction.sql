@@ -6,7 +6,8 @@ WITH src AS (
            UPPER(TRIM(ho_state)) AS st,
            CASE WHEN TRIM(ho_zip) ~ '^[0-9]{5}' THEN LEFT(TRIM(ho_zip), 5) END AS zip5
     FROM bronze.iowa_businesses_raw
-    WHERE ho_country = 'USA' AND ho_city IS NOT NULL AND TRIM(ho_city) <> ''
+     WHERE (ho_country = 'USA' OR ho_country IS NULL)
+      AND ho_city IS NOT NULL AND TRIM(ho_city) <> ''
     UNION ALL
     SELECT UPPER(TRIM(REPLACE(ra_city, '"', ''))),
            UPPER(TRIM(ra_state)),
