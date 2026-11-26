@@ -46,7 +46,7 @@ CREATE TABLE gold.dim_date (
     month_name TEXT,
     day_of_week INTEGER,
     day_name TEXT
-)
+);
 
 INSERT INTO gold.dim_date VALUES (-1, NULL, NULL, NULL, NULL, 'UNKNOWN', NULL, 'UNKNOWN');
 INSERT INTO gold.dim_date
@@ -69,3 +69,12 @@ SELECT CAST(TO_CHAR(d, 'YYYYMMDD') AS INTEGER),
        TRIM(TO_CHAR(d, 'Day'))
 FROM days;
 
+
+-- dim_corporation_type
+CREATE TABLE gold.dim_corporation_type (
+    corporation_type_key INTEGER PRIMARY KEY,
+    type_label TEXT NOT NULL UNIQUE,
+    type_description TEXT NOT NULL,
+    category TEXT NOT NULL,
+    domestic_foreign TEXT NOT NULL
+);
