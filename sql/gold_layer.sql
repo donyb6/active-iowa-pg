@@ -162,3 +162,28 @@ CREATE TABLE gold.fact_business_entity (
     ra_zip_invalidated BOOLEAN NOT NULL,
     entity_count SMALLINT NOT NULL DEFAULT 1
 );
+
+INSERT INTO gold.fact_business_entity (
+    corp_number, effective_date_key, corporation_type_key, ho_location_key, ra_location_key,
+    legal_name, registered_agent,
+    ho_address_1, ho_zip, ho_latitude, ho_longitude, ho_coord_status,
+    ra_address_1, ra_zip, ra_latitude, ra_longitude, ra_coord_status,
+    ho_city_corrected, ra_city_corrected, ra_zip_invalidated
+)
+SELECT
+    s.corp_number,
+    COALESCE(CAST(TO_CHAR(s.effective_date, 'YYYYMMDD') AS INTEGER), -1),
+    COALESCE(t.corporation_type_key, -1),
+    hl.location_key,
+    rl.location_key,
+    s.legal_name, s.registered_agent,
+    s.ho_address_1, s.ho_zip, s.ho_latitude, s.ho_longitude, s.ho_coord_status,
+    s.ra_address_1, s.ra_zip, s.ra_latitude, s.ra_longitude, s.ra_coord_status,
+    s.ho_city_corrected, s.ra_city_corrected, s.ra_zip_invalidated
+FROM gold.stg_entity AS s
+LEFT JOIN gold.dim_corporation_type AS t 
+    ON t.type_label = s.corporation_type
+LEFT JOIN gold.dim_location AS hl
+    ON hl.country = s.ho_country_n AND hl.state = s.ho_state_n AND hl.city = s.ho_city_n
+LEFT JOIN gold.dim_location AS rl
+    ON rl.country = s.ra_country_n AND rl.state = s.ra_state_n AND rl.city = s.ra_city_n;
