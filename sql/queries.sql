@@ -222,3 +222,17 @@ GROUP BY pass ORDER BY pass;
 SELECT country, original, proposed, pass, dist, row_count
 FROM silver.intl_city_corrections
 ORDER BY pass, country, row_count DESC;
+
+SELECT corporation_type, COUNT(*) AS n
+FROM silver.iowa_businesses
+GROUP BY corporation_type
+ORDER BY n DESC;
+
+SELECT
+    (SELECT COUNT(*) FROM (SELECT DISTINCT ho_country, ho_state, ho_city
+                           FROM silver.iowa_businesses) a) AS ho_locations,
+    (SELECT COUNT(*) FROM (SELECT DISTINCT ra_state, ra_city
+                           FROM silver.iowa_businesses) b) AS ra_locations,
+    (SELECT COUNT(DISTINCT registered_agent) FROM silver.iowa_businesses) AS agents,
+    (SELECT MIN(effective_date) FROM silver.iowa_businesses) AS min_date,
+    (SELECT MAX(effective_date) FROM silver.iowa_businesses) AS max_date;
