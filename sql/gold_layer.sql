@@ -34,3 +34,16 @@ SELECT
                                   OR s.ra_longitude NOT BETWEEN -96.7 AND -90.0) THEN 'SUSPECT'
          ELSE 'OK' END AS ra_coord_status
 FROM silver.iowa_businesses AS s;
+
+
+-- dim_date
+CREATE TABLE gold.dim_date (
+    date_key INTEGER PRIMARY KEY,
+    full_date DATE,
+    calendar_year INTEGER,
+    calendar_quarter INTEGER,
+    calendar_month INTEGER,
+    month_name TEXT,
+    day_of_week INTEGER,
+    day_name TEXT
+)
