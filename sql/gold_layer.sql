@@ -101,3 +101,14 @@ FROM (
 ) AS t;
 
 
+-- dim_location
+CREATE TABLE gold.dim_location (
+    location_key INTEGER PRIMARY KEY,
+    country TEXT NOT NULL,
+    state TEXT NOT NULL,
+    city TEXT NOT NULL,
+    region_group TEXT NOT NULL,
+    latitude NUMERIC(9,6),
+    longitude NUMERIC(9,6),
+    UNIQUE(country, state, city)
+);
