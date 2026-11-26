@@ -136,3 +136,29 @@ SELECT ROW_NUMBER() OVER (ORDER BY country, state, city),
 FROM pts
 WHERE NOT (country = 'UNKNOWN' AND state = 'UNKNOWN' AND city = 'UNKNOWN')
 GROUP BY country, state, city;
+
+
+-- fact table
+CREATE TABLE gold.fact_business_entity (
+    corp_number TEXT PRIMARY KEY,
+    effective_date_key INTEGER NOT NULL REFERENCES gold.dim_date (date_key),
+    corporation_type_key INTEGER NOT NULL REFERENCES gold.dim_corporation_type (corporation_type_key),
+    ho_location_key INTEGER NOT NULL REFERENCES gold.dim_location (location_key),
+    ra_location_key INTEGER NOT NULL REFERENCES gold.dim_location (location_key),
+    legal_name TEXT NOT NULL,
+    registered_agent TEXT,
+    ho_address_1 TEXT,
+    ho_zip TEXT,
+    ho_latitude NUMERIC(11,8),
+    ho_longitude NUMERIC(11,8),
+    ho_coord_status TEXT NOT NULL,
+    ra_address_1 TEXT,
+    ra_zip TEXT,
+    ra_latitude NUMERIC(11,8),
+    ra_longitude NUMERIC(11,8),
+    ra_coord_status TEXT NOT NULL,
+    ho_city_corrected BOOLEAN NOT NULL,
+    ra_city_corrected BOOLEAN NOT NULL,
+    ra_zip_invalidated BOOLEAN NOT NULL,
+    entity_count SMALLINT NOT NULL DEFAULT 1
+);
