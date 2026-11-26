@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS gold.dim_date;
 
 
 -- staging view
-CREATE OR REPLACE VIEW gold.stg_entity ASC
+CREATE OR REPLACE VIEW gold.stg_entity AS
 SELECT
     s.corp_number, s.legal_name, s.corporation_type, s.effective_date, s.registered_agent,
     s.ho_address_1, s.ho_zip, s.ho_latitude, s.ho_longitude,
