@@ -47,3 +47,25 @@ CREATE TABLE gold.dim_date (
     day_of_week INTEGER,
     day_name TEXT
 )
+
+INSERT INTO gold.dim_date VALUES (-1, NULL, NULL, NULL, NULL, 'UNKNOWN', NULL, 'UNKNOWN');
+INSERT INTO gold.dim_date
+WITH bounds AS (
+    SELECT MAKE_DATE(CAST(EXTRACT(YEAR FROM MIN(effective_date)) AS INTEGER), 1, 1)   AS d0,
+           MAKE_DATE(CAST(EXTRACT(YEAR FROM MAX(effective_date)) AS INTEGER), 12, 31) AS d1
+    FROM silver.iowa_businesses
+),
+days AS (
+    SELECT b.d0 + g AS d
+    FROM bounds AS b, GENERATE_SERIES(0, b.d1 - b.d0) AS g
+)
+SELECT CAST(TO_CHAR(d, 'YYYYMMDD') AS INTEGER),
+       d,
+       CAST(EXTRACT(YEAR FROM d) AS INTEGER),
+       CAST(EXTRACT(QUARTER FROM d) AS INTEGER),
+       CAST(EXTRACT(MONTH FROM d) AS INTEGER),
+       TRIM(TO_CHAR(d, 'Month')),
+       CAST(EXTRACT(ISODOW FROM d) AS INTEGER),
+       TRIM(TO_CHAR(d, 'Day'))
+FROM days;
+
