@@ -236,3 +236,16 @@ SELECT
     (SELECT COUNT(DISTINCT registered_agent) FROM silver.iowa_businesses) AS agents,
     (SELECT MIN(effective_date) FROM silver.iowa_businesses) AS min_date,
     (SELECT MAX(effective_date) FROM silver.iowa_businesses) AS max_date;
+
+SELECT
+    COUNT(*) AS total,
+    COUNT(ho_latitude) AS ho_with_coords,
+    COUNT(ra_latitude) AS ra_with_coords,
+    COUNT(*) FILTER (WHERE ho_latitude = 0 OR ho_longitude = 0) AS ho_zero,
+    COUNT(*) FILTER (WHERE ho_state = 'IA'
+        AND (ho_latitude NOT BETWEEN 40.3 AND 43.6
+          OR ho_longitude NOT BETWEEN -96.7 AND -90.0)) AS ho_iowa_outside_bounds,
+    COUNT(*) FILTER (WHERE ra_state = 'IA'
+        AND (ra_latitude NOT BETWEEN 40.3 AND 43.6
+          OR ra_longitude NOT BETWEEN -96.7 AND -90.0)) AS ra_iowa_outside_bounds
+FROM silver.iowa_businesses;
