@@ -193,3 +193,15 @@ CREATE INDEX ix_fact_effective_date ON gold.fact_business_entity (effective_date
 CREATE INDEX ix_fact_corp_type      ON gold.fact_business_entity (corporation_type_key);
 CREATE INDEX ix_fact_ho_location    ON gold.fact_business_entity (ho_location_key);
 CREATE INDEX ix_fact_ra_location    ON gold.fact_business_entity (ra_location_key);
+
+
+-- aggregate for the registered agents (agents serving 10 or more entities)
+CREATE TABLE gold.agg_registered_agents AS
+SELECT RANK() OVER (ORDER BY COUNT(*) DESC) AS agent_rank,
+       registered_agent,
+       COUNT(*) AS entity_count,
+       ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM gold.fact_business_entity), 3) AS pct_of_entities
+FROM gold.fact_business_entity
+WHERE registered_agent IS NOT NULL
+GROUP BY registered_agent
+HAVING COUNT(*) >= 10;
