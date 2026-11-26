@@ -78,3 +78,26 @@ CREATE TABLE gold.dim_corporation_type (
     category TEXT NOT NULL,
     domestic_foreign TEXT NOT NULL
 );
+
+INSERT INTO gold.dim_corporation_type VALUES (-1, 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', 'N/A');
+INSERT INTO gold.dim_corporation_type
+SELECT code, type_label, description,
+       CASE WHEN code IN (34, 35, 36, 37) THEN 'LLC'
+            WHEN code IN (10, 11, 12, 13, 61) THEN 'CORPORATION'
+            WHEN code IN (22, 23, 26) THEN 'NON-PROFIT'
+            WHEN code IN (43, 44, 45, 46, 56, 57, 58, 59) THEN 'PARTNERSHIP'
+            WHEN code IN (24, 25, 51, 53, 54, 55) THEN 'COOPERATIVE'
+            WHEN code IN (60, 62, 63) THEN 'FINANCIAL & INSURANCE'
+            ELSE 'OTHER' END,
+       CASE WHEN STRPOS(description, 'DOMESTIC') > 0 THEN 'DOMESTIC'
+            WHEN STRPOS(description, 'FOREIGN') > 0  THEN 'FOREIGN'
+            ELSE 'N/A' END
+FROM (
+     SELECT DISTINCT corporation_type AS type_label,
+           CAST(SPLIT_PART(corporation_type, ' - ', 1) AS INTEGER) AS code,
+           SUBSTRING(corporation_type FROM STRPOS(corporation_type, ' - ') + 3) AS description
+    FROM silver.iowa_businesses
+    WHERE corporation_type IS NOT NULL
+) AS t;
+
+
