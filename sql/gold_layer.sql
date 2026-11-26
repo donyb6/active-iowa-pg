@@ -205,3 +205,19 @@ FROM gold.fact_business_entity
 WHERE registered_agent IS NOT NULL
 GROUP BY registered_agent
 HAVING COUNT(*) >= 10;
+
+-- aggregate for the density map: coordinates rounded to 2 decimals (about 1 km)
+CREATE TABLE gold.agg_map_grid AS
+SELECT 'HEAD_OFFICE' AS role,
+       ROUND(ho_latitude, 2) AS lat, ROUND(ho_longitude, 2) AS lon,
+       COUNT(*) AS entity_count
+FROM gold.fact_business_entity
+WHERE ho_coord_status = 'OK'
+GROUP BY 1, 2, 3
+UNION ALL
+SELECT 'REGISTERED_AGENT',
+       ROUND(ra_latitude, 2), ROUND(ra_longitude, 2),
+       COUNT(*)
+FROM gold.fact_business_entity
+WHERE ra_coord_status = 'OK'
+GROUP BY 1, 2, 3;
