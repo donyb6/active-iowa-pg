@@ -77,3 +77,12 @@ CHECKS = [
           max_allowed=564),
 ]
 
+@pytest.mark.parametrize("check", CHECKS, ids=[c.name for c in CHECKS])
+def test_gold(session, check):
+    violations = session.execute(text(check.sql)).scalar()
+    message = f"{check.name}: {violations} violations (allowed {check.max_allowed})"
+
+    if check.severity == "error":
+        assert violations <= check.max_allowed, message
+    elif violations > check.max_allowed:
+        warnings.warn(message)
