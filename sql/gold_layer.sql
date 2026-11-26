@@ -187,3 +187,9 @@ LEFT JOIN gold.dim_location AS hl
     ON hl.country = s.ho_country_n AND hl.state = s.ho_state_n AND hl.city = s.ho_city_n
 LEFT JOIN gold.dim_location AS rl
     ON rl.country = s.ra_country_n AND rl.state = s.ra_state_n AND rl.city = s.ra_city_n;
+
+
+CREATE INDEX ix_fact_effective_date ON gold.fact_business_entity (effective_date_key);
+CREATE INDEX ix_fact_corp_type      ON gold.fact_business_entity (corporation_type_key);
+CREATE INDEX ix_fact_ho_location    ON gold.fact_business_entity (ho_location_key);
+CREATE INDEX ix_fact_ra_location    ON gold.fact_business_entity (ra_location_key);
