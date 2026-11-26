@@ -112,3 +112,27 @@ CREATE TABLE gold.dim_location (
     longitude NUMERIC(9,6),
     UNIQUE(country, state, city)
 );
+
+INSERT INTO gold.dim_location VALUES (-1, 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', 'UNKNOWN', NULL, NULL);
+INSERT INTO gold.dim_location (location_key, country, state, city, region_group, latitude, longitude)
+WITH pts AS (
+    SELECT ho_country_n AS country, ho_state_n AS state, ho_city_n AS city,
+           ho_latitude AS lat, ho_longitude AS lon, ho_coord_status AS coord_status
+    FROM gold.stg_entity
+    UNION ALL
+    SELECT ra_country_n, ra_state_n, ra_city_n, ra_latitude, ra_longitude, ra_coord_status
+    FROM gold.stg_entity
+)
+SELECT ROW_NUMBER() OVER (ORDER BY country, state, city),
+       country, state, city,
+       CASE WHEN country = 'UNKNOWN' THEN 'UNKNOWN'
+            WHEN country IN ('PRI', 'VIR', 'GUM') THEN 'US TERRITORY'
+            WHEN country = 'USA' AND state = 'UNKNOWN' THEN 'UNKNOWN'
+            WHEN country = 'USA' AND state = 'IA' THEN 'IOWA'
+            WHEN country = 'USA' THEN 'OTHER US STATE'
+            ELSE 'INTERNATIONAL' END,
+       ROUND(AVG(lat) FILTER (WHERE coord_status = 'OK'), 6),
+       ROUND(AVG(lon) FILTER (WHERE coord_status = 'OK'), 6)
+FROM pts
+WHERE NOT (country = 'UNKNOWN' AND state = 'UNKNOWN' AND city = 'UNKNOWN')
+GROUP BY country, state, city;
