@@ -307,12 +307,15 @@ GROUP BY t.domestic_foreign, l.region_group
 ORDER BY t.domestic_foreign, entities DESC;
 
 
-SELECT l.city,
-       COUNT(*) AS entities,
-       ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct_of_iowa
+SELECT l.city, COUNT(*) AS entities, ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct_of_iowa
 FROM gold.fact_business_entity f
 JOIN gold.dim_location l ON l.location_key = f.ho_location_key
 WHERE l.region_group = 'IOWA'
 GROUP BY l.city
 ORDER BY entities DESC
+LIMIT 15;
+
+SELECT agent_rank, registered_agent, entity_count, pct_of_entities
+FROM gold.agg_registered_agents
+ORDER BY agent_rank
 LIMIT 15;
