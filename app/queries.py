@@ -99,3 +99,81 @@ def types_breakdown():
         GROUP BY t.category, t.type_description, t.domestic_foreign
         ORDER BY entities DESC
     """)
+
+# mapping cache
+@st.cache_data(ttl=CACHE_SECONDS)
+def region_split(role="HEAD_OFFICE"):
+    c = _role(role)
+    return run(f"""
+        SELECT l.region_group, COUNT(*) AS entities
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_location AS l 
+            ON l.location_key = f.{c['loc']}
+        GROUP BY l.region_group
+        ORDER BY entities DESC
+    """)
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def top_cities(role="HEAD_OFFICE", region_group="IOWA", limit=20):
+    c = _role(role)
+    return run(f"""
+        SELECT l.city, l.state, l.country,
+               CAST(l.latitude AS DOUBLE PRECISION) AS lat,
+               CAST(l.longitude AS DOUBLE PRECISION) AS lon,
+               COUNT(*) AS entities
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_location AS l 
+            ON l.location_key = f.{c['loc']}
+        WHERE l.region_group = :region_group
+          AND l.city <> 'UNKNOWN'
+        GROUP BY l.city, l.state, l.country, l.latitude, l.longitude
+        ORDER BY entities DESC
+        LIMIT :limit
+    """, {"region_group": region_group, "limit": limit}
+    )
+    
+@st.cache_data(ttl=CACHE_SECONDS)
+def density_grid(role="HEAD_OFFICE", south=40.3, north=43.6, west=-96.7, east=-90.0):
+    _role(role)
+    return run("""
+        SELECT CAST(lat AS DOUBLE PRECISION) AS lat,
+               CAST(lon AS DOUBLE PRECISION) AS lon,
+               entity_count
+        FROM gold.agg_map_grid
+        WHERE role = :role
+          AND lat BETWEEN :south AND :north
+          AND lon BETWEEN :west AND :east
+    """, {"role": role, "south": south, "north": north, "west": west, "east": east}
+    )
+    
+@st.cache_data(ttl=CACHE_SECONDS)
+def city_options(role="HEAD_OFFICE"):
+    c = _role(role)
+    return run(f"""
+        SELECT l.city, l.state, COUNT(*) AS entities
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_location AS l 
+            ON l.location_key = f.{c['loc']}
+        WHERE l.region_group = 'IOWA' AND l.city <> 'UNKNOWN'
+        GROUP BY l.city, l.state
+        ORDER BY entities DESC
+        LIMIT 300
+    """)
+    
+@st.cache_data(ttl=CACHE_SECONDS)
+def city_points(city, state, role="HEAD_OFFICE", limit=5000):
+    c = _role(role)
+    return run(f"""
+        SELECT f.corp_number, f.legal_name, t.category,
+               CAST(f.{c['lat']} AS DOUBLE PRECISION) AS lat,
+               CAST(f.{c['lon']} AS DOUBLE PRECISION) AS lon
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_location AS l 
+            ON l.location_key = f.{c['loc']}
+        JOIN gold.dim_corporation_type AS t 
+            ON t.corporation_type_key = f.corporation_type_key
+        WHERE l.city = :city AND l.state = :state AND f.{c['status']} = 'OK'
+        ORDER BY MD5(f.corp_number)
+        LIMIT :limit
+    """, {"city": city, "state": state, "limit": limit}
+    )
