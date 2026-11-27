@@ -319,3 +319,13 @@ SELECT agent_rank, registered_agent, entity_count, pct_of_entities
 FROM gold.agg_registered_agents
 ORDER BY agent_rank
 LIMIT 15;
+
+
+SELECT
+  (SELECT COUNT(DISTINCT UPPER(TRIM(ho_city)))
+   FROM bronze.iowa_businesses_raw
+   WHERE UPPER(TRIM(ho_state)) = 'IA') AS city_values_in_bronze,
+  (SELECT COUNT(DISTINCT l.city)
+   FROM gold.fact_business_entity f
+   JOIN gold.dim_location l ON l.location_key = f.ho_location_key
+   WHERE l.region_group = 'IOWA' AND l.city <> 'UNKNOWN') AS cities_in_gold;
