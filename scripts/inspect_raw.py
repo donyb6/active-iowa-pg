@@ -1,21 +1,16 @@
-import yaml
+import json
 from pathlib import Path
 
 project_dir = Path(__file__).resolve().parent.parent
 
-with (project_dir / "config" / "data.yaml").open(encoding="utf-8") as f:
-    cfg = yaml.safe_load(f)
+raw_file = project_dir / "data" / "raw" / "active_iowa_business.json"
+with raw_file.open(encoding="utf-8") as f:
+    rows = [json.loads(line) for line in (f.readline(), f.readline()) if line.strip()]
 
-raw_dir = Path(cfg["storage"]["raw_dir"])
-if not raw_dir.is_absolute():
-    raw_dir = project_dir / raw_dir
-p = raw_dir / cfg["storage"]["extracted_filename"]
+if rows:
+    print(type(rows[0]))
+    if isinstance(rows[0], dict):
+        print(list(rows[0].keys()))
 
-with open(p, encoding="utf-8") as f:
-    first = f.readline()
-    second = f.readline()
-
-
-print(first[:80])
-print(second[:80])
-print("size MB:", p.stat().st_size / 1e6)
+print("Sample:")
+print(json.dumps(rows, indent=2, ensure_ascii=False))
