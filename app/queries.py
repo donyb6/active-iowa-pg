@@ -177,3 +177,45 @@ def city_points(city, state, role="HEAD_OFFICE", limit=5000):
         LIMIT :limit
     """, {"city": city, "state": state, "limit": limit}
     )
+    
+    
+# registered agents
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def agent_top(limit=25):
+    return run("""
+        SELECT agent_rank, registered_agent, entity_count, pct_of_entities
+        FROM gold.agg_registered_agents
+        ORDER BY agent_rank
+        LIMIT :limit
+    """, {"limit": limit}
+    )
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def agent_concentration():
+    return run("""
+        SELECT agent_rank, entity_count, pct_of_entities
+        FROM gold.agg_registered_agents
+        ORDER BY agent_rank
+    """)
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def agent_size_buckets():
+    return run("""
+        WITH a AS (
+            SELECT registered_agent, COUNT(*) AS n
+            FROM gold.fact_business_entity
+            WHERE registered_agent IS NOT NULL
+            GROUP BY registered_agent
+        )
+        SELECT CASE WHEN n = 1  THEN '1 entity'
+                    WHEN n < 5  THEN '2-4'
+                    WHEN n < 10 THEN '5-9'
+                    WHEN n < 100 THEN '10-99'
+                    ELSE '100+' END AS size_bucket,
+               COUNT(*) AS agents,
+               CAST(SUM(n) AS BIGINT) AS entities
+        FROM a
+        GROUP BY 1
+        ORDER BY MIN(n)
+    """)
