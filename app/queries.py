@@ -219,3 +219,47 @@ def agent_size_buckets():
         GROUP BY 1
         ORDER BY MIN(n)
     """)
+    
+
+# data quality
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def quality_flags():
+     return run("""
+        SELECT 'Head-office city corrected' AS issue,
+               COUNT(*) FILTER (WHERE ho_city_corrected) AS rows_affected
+        FROM gold.fact_business_entity
+        UNION ALL SELECT 'Registered-agent city corrected',
+               COUNT(*) FILTER (WHERE ra_city_corrected) FROM gold.fact_business_entity
+        UNION ALL SELECT 'Registered-agent ZIP invalid (left blank)',
+               COUNT(*) FILTER (WHERE ra_zip_invalidated) FROM gold.fact_business_entity
+        UNION ALL SELECT 'No head-office information',
+               COUNT(*) FILTER (WHERE ho_location_key = -1) FROM gold.fact_business_entity
+        UNION ALL SELECT 'Effective date missing',
+               COUNT(*) FILTER (WHERE effective_date_key = -1) FROM gold.fact_business_entity
+    """)
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def coord_status():
+    return run("""
+        SELECT 'Head office' AS role, ho_coord_status AS status, COUNT(*) AS entities
+        FROM gold.fact_business_entity GROUP BY 2
+        UNION ALL
+        SELECT 'Registered agent', ra_coord_status, COUNT(*)
+        FROM gold.fact_business_entity GROUP BY 2
+    """)
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def cleaning_by_pass():
+    return run("""
+        SELECT 'US' AS scope, pass, CAST(SUM(row_count) AS BIGINT) AS rows_changed
+        FROM silver.city_corrections
+        WHERE pass <> 'UNRESOLVED_short'
+        GROUP BY pass
+        UNION ALL
+        SELECT 'International', pass, CAST(SUM(row_count) AS BIGINT)
+        FROM silver.intl_city_corrections
+        WHERE proposed <> original
+        GROUP BY pass
+        ORDER BY 1, 3 DESC
+    """)
