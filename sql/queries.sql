@@ -249,3 +249,49 @@ SELECT
         AND (ra_latitude NOT BETWEEN 40.3 AND 43.6
           OR ra_longitude NOT BETWEEN -96.7 AND -90.0)) AS ra_iowa_outside_bounds
 FROM silver.iowa_businesses;
+
+
+-- queries on gold layer
+
+SELECT f.corp_number, f.legal_name, f.registered_agent,
+    t.category, t.type_label, t.type_description,
+    d.full_date AS effective_date, d.calendar_quarter,
+    l.city, l.state, l.country, l.region_group, l.latitude, l.latitude
+FROM gold.fact_business_entity AS f
+JOIN gold.dim_corporation_type AS t
+    ON t.corporation_type_key = f.corporation_type_key
+JOIN gold.dim_date AS d
+    ON d.date_key = f.effective_date_key
+JOIN gold.dim_location as l
+    ON l.location_key = f.ho_location_key
+ORDER BY d.calendar_year;
+
+SELECT t.category, COUNT(*) AS entities,
+    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 1) AS pct
+FROM gold.fact_business_entity AS f
+JOIN gold.dim_corporation_type AS t
+    ON f.corporation_type_key = t.corporation_type_key
+GROUP BY t.category
+ORDER BY entities DESC;
+
+SELECT d.calendar_year, COUNT(*) AS active_entities,
+    COUNT (*) FILTER(WHERE t.category = 'LLC') AS llcs,
+    ROUND(100.0 * COUNT (*) FILTER(WHERE t.category = 'LLC') / COUNT(*), 1) AS llc_pct
+FROM gold.fact_business_entity AS f
+JOIN gold.dim_date as d
+    ON d.date_key = f.effective_date_key
+JOIN gold.dim_corporation_type AS t
+    ON t.corporation_type_key = f.corporation_type_key
+GROUP BY d.calendar_year
+ORDER BY d.calendar_year;
+
+
+SELECT t.category, d.calendar_year, COUNT(*) AS entities,
+    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER(), 1) as category_pct
+FROM gold.fact_business_entity as f
+JOIN gold.dim_corporation_type AS t
+    ON t.corporation_type_key = f.corporation_type_key
+JOIN gold.dim_date AS d
+    ON d.date_key = f.effective_date_key
+GROUP BY d.calendar_year, t.category
+ORDER BY d.calendar_year;
