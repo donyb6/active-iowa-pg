@@ -295,3 +295,24 @@ JOIN gold.dim_date AS d
     ON d.date_key = f.effective_date_key
 GROUP BY d.calendar_year, t.category
 ORDER BY d.calendar_year;
+
+
+SELECT t.domestic_foreign, l.region_group, COUNT(*) AS entities
+FROM gold.fact_business_entity AS f
+JOIN gold.dim_corporation_type AS t 
+    ON t.corporation_type_key = f.corporation_type_key
+JOIN gold.dim_location l 
+    ON l.location_key = f.ho_location_key
+GROUP BY t.domestic_foreign, l.region_group
+ORDER BY t.domestic_foreign, entities DESC;
+
+
+SELECT l.city,
+       COUNT(*) AS entities,
+       ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct_of_iowa
+FROM gold.fact_business_entity f
+JOIN gold.dim_location l ON l.location_key = f.ho_location_key
+WHERE l.region_group = 'IOWA'
+GROUP BY l.city
+ORDER BY entities DESC
+LIMIT 15;
