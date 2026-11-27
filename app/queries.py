@@ -26,7 +26,8 @@ def run(sql, params=None):
         return pd.read_sql(text(sql), conn, params=params or {}, coerce_float=True)
 
     
-# caches
+# caching
+
 @st.cache_data(ttl=CACHE_SECONDS)
 def kpis():
     return run("""
@@ -38,9 +39,11 @@ def kpis():
                                   AND d.full_date <= CURRENT_DATE) AS new_last_12_months,
                COUNT(DISTINCT l.city) FILTER (WHERE l.region_group = 'IOWA'
                                                 AND l.city <> 'UNKNOWN') AS iowa_cities
-        FROM gold.fact_business_entity f
-        JOIN gold.dim_corporation_type t ON t.corporation_type_key = f.corporation_type_key
-        JOIN gold.dim_location l ON l.location_key = f.ho_location_key
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_corporation_type AS t 
+            ON t.corporation_type_key = f.corporation_type_key
+        JOIN gold.dim_location AS l 
+            ON l.location_key = f.ho_location_key
         JOIN gold.dim_date d ON d.date_key = f.effective_date_key
     """)
     
@@ -50,8 +53,9 @@ def category_share():
         SELECT t.category,
             COUNT(*) AS entities,
             ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1) AS pct
-        FROM gold.fact_business_entity f
-        JOIN gold.dim_corporation_type t ON t.corporation_type_key = f.corporation_type_key
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_corporation_type AS t 
+            ON t.corporation_type_key = f.corporation_type_key
         GROUP BY t.category
         ORDER BY entities DESC
      """)
@@ -60,11 +64,38 @@ def category_share():
 def entities_by_year(year_from=1900, year_to=2100):
     return run("""
         SELECT d.calendar_year AS year, t.category, COUNT(*) AS entities
-        FROM gold.fact_business_entity f
-        JOIN gold.dim_date d ON d.date_key = f.effective_date_key
-        JOIN gold.dim_corporation_type t ON t.corporation_type_key = f.corporation_type_key
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_date d 
+            ON d.date_key = f.effective_date_key
+        JOIN gold.dim_corporation_type AS t 
+            ON t.corporation_type_key = f.corporation_type_key
         WHERE d.calendar_year BETWEEN :year_from AND :year_to
         GROUP BY d.calendar_year, t.category
         ORDER BY d.calendar_year, t.category
     """, {"year_from": year_from, "year_to": year_to}
     )
+
+@st.cache_data(ttl=CACHE_SECONDS)
+def entities_by_month(year_from=2000):
+    return run("""
+            SELECT d.calendar_year, d.calendar_month as month,
+                d.month_name, COUNT(*) AS entities
+            FROM gold.fact_business_entity AS f
+            JOIN gold.dim_date AS d 
+                ON d.date_key = f.effective_date_key
+            WHERE d.calendar_year >= :year_from
+            GROUP BY d.calendar_year, d.calendar_month, d.month_name
+            ORDER BY d.calendar_year, d.calendar_month
+        """, {"year_from": year_from}
+        )
+    
+@st.cache_data(ttl=CACHE_SECONDS)
+def types_breakdown():
+    return run("""
+        SELECT t.category, t.type_description, t.domestic_foreign, COUNT(*) AS entities
+        FROM gold.fact_business_entity AS f
+        JOIN gold.dim_corporation_type AS t 
+            ON t.corporation_type_key = f.corporation_type_key
+        GROUP BY t.category, t.type_description, t.domestic_foreign
+        ORDER BY entities DESC
+    """)
